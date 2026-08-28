@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Study Mentor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <p class="eyebrow">AI Study Mentor</p>
+        <h1 id="title">اپنے AI استاد سے پوچھیں</h1>
+      </div>
+      <select id="language" aria-label="Language">
+        <option value="ur">اردو</option>
+        <option value="en">English</option>
+      </select>
+    </header>
+
+    <section class="card">
+      <label id="questionLabel" for="question">اپنا سوال لکھیں</label>
+      <textarea id="question" rows="6" placeholder="مثلاً: Photosynthesis کو آسان اردو میں سمجھائیں۔"></textarea>
+
+      <div class="actions">
+        <button id="micBtn" type="button">🎙️ <span>بول کر پوچھیں</span></button>
+        <button id="askBtn" type="button">✨ <span>AI سے پوچھیں</span></button>
+      </div>
+
+      <p id="voiceStatus" class="status"></p>
+      <div id="answer" class="answer" aria-live="polite"></div>
+      <button id="speakBtn" class="secondary" type="button" hidden>🔊 جواب سنیں</button>
+    </section>
+
+    <footer>
+      <span>Starter test — بعد میں اسی project میں YouTube, PDF, Image, Quiz شامل ہوں گے۔</span>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
