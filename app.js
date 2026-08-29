@@ -80,18 +80,25 @@ els.ask.addEventListener("click", async () => {
       body: JSON.stringify({ question, language })
     });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Request failed");
-    els.answer.textContent = data.answer || "";
-    els.speak.hidden = !data.answer;
-  } catch (err) {
-    console.error(err);
-    els.answer.textContent = text[language].error;
-  } finally {
-    els.ask.disabled = false;
-  }
-});
+    const raw = await response.text();
 
+let data;
+
+try {
+  data = JSON.parse(raw);
+} catch {
+  throw new Error(raw || `HTTP ${response.status}`);
+}
+
+if (!response.ok) {
+  throw new Error(data.error || `HTTP ${response.status}`);
+}
+
+els.answer.textContent =
+  `${text[language].error}\n\n${err.message || err}`;
+
+els.answer.textContent = data.answer;
+els.speak.hidden = false;
 /* Voice input: uses the device/browser speech recognition where supported.
    No private API key is exposed here. */
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
