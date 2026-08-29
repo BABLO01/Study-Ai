@@ -1,12 +1,22 @@
 /*
-  AI Study Mentor starter.
-  IMPORTANT: No AI API key belongs in this browser file.
-  The browser calls the Supabase Edge Function "ask-ai".
+  Study AI - corrected app.js
+
+  IMPORTANT:
+  - Gemini API key इस file में कभी न डालें।
+  - Gemini API key केवल Supabase Edge Function के Secret में रहेगी.
 */
 
 const SUPABASE_URL = "https://aoflthtjjmatlsybczuq.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_2IPYcope6j2tNxTIEX6_Nw_8HnNVIh_";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_2IPYcope6j2tNxTIEX6_Nw_8HnNVIh_";
+
 const FUNCTION_NAME = "ask-ai";
+
+
+/* =========================
+   ELEMENTS
+========================= */
 
 const els = {
   language: document.getElementById("language"),
@@ -20,121 +30,792 @@ const els = {
   label: document.getElementById("questionLabel")
 };
 
+
+/* =========================
+   TRANSLATIONS
+========================= */
+
 const text = {
+
   ur: {
     title: "اپنے AI استاد سے پوچھیں",
+
     label: "اپنا سوال لکھیں",
-    placeholder: "مثلاً: Photosynthesis کو آسان اردو میں سمجھائیں۔",
-    ask: "AI سے پوچھیں",
-    mic: "بول کر پوچھیں",
-    listening: "سن رہا ہوں… اردو میں بولیں۔",
-    ready: "تیار ہے۔",
-    speaking: "جواب سنایا جا رہا ہے…",
-    error: "معذرت، اس وقت جواب حاصل نہیں ہو سکا۔",
-    noSpeech: "آپ کی آواز سنائی نہیں دی۔ دوبارہ کوشش کریں۔"
+
+    placeholder:
+      "مثلاً: Photosynthesis کو آسان اردو میں سمجھائیں۔",
+
+    ask:
+      "AI سے پوچھیں",
+
+    mic:
+      "بول کر پوچھیں",
+
+    listening:
+      "سن رہا ہوں… اردو میں بولیں۔",
+
+    ready:
+      "تیار ہے۔",
+
+    speaking:
+      "جواب سنایا جا رہا ہے…",
+
+    thinking:
+      "AI جواب تیار کر رہا ہے…",
+
+    error:
+      "معذرت، اس وقت جواب حاصل نہیں ہو سکا۔",
+
+    noSpeech:
+      "آپ کی آواز سنائی نہیں دی۔ دوبارہ کوشش کریں۔"
   },
+
+
   en: {
-    title: "Ask your AI Study Mentor",
-    label: "Write your question",
-    placeholder: "Example: Explain photosynthesis in simple English.",
-    ask: "Ask AI",
-    mic: "Ask by voice",
-    listening: "Listening… speak clearly.",
-    ready: "Ready.",
-    speaking: "Reading the answer…",
-    error: "Sorry, the answer could not be retrieved.",
-    noSpeech: "No speech was detected. Please try again."
+    title:
+      "Ask your AI Study Mentor",
+
+    label:
+      "Write your question",
+
+    placeholder:
+      "Example: Explain photosynthesis in simple English.",
+
+    ask:
+      "Ask AI",
+
+    mic:
+      "Ask by voice",
+
+    listening:
+      "Listening… speak clearly.",
+
+    ready:
+      "Ready.",
+
+    speaking:
+      "Reading the answer…",
+
+    thinking:
+      "Preparing your AI answer…",
+
+    error:
+      "Sorry, the answer could not be retrieved.",
+
+    noSpeech:
+      "No speech was detected. Please try again."
   }
+
 };
 
+
+/* =========================
+   LANGUAGE
+========================= */
+
 function setLanguage(lang) {
-  const t = text[lang];
-  document.documentElement.lang = lang === "ur" ? "ur" : "en";
-  document.documentElement.dir = lang === "ur" ? "rtl" : "ltr";
-  els.title.textContent = t.title;
-  els.label.textContent = t.label;
-  els.question.placeholder = t.placeholder;
-  els.ask.querySelector("span").textContent = t.ask;
-  els.mic.querySelector("span").textContent = t.mic;
-  els.status.textContent = "";
+
+  const t = text[lang] || text.ur;
+
+  document.documentElement.lang =
+    lang === "ur" ? "ur" : "en";
+
+  document.documentElement.dir =
+    lang === "ur" ? "rtl" : "ltr";
+
+
+  if (els.title) {
+    els.title.textContent = t.title;
+  }
+
+
+  if (els.label) {
+    els.label.textContent = t.label;
+  }
+
+
+  if (els.question) {
+    els.question.placeholder = t.placeholder;
+  }
+
+
+  if (els.ask) {
+
+    const askSpan =
+      els.ask.querySelector("span");
+
+    if (askSpan) {
+      askSpan.textContent = t.ask;
+    }
+
+  }
+
+
+  if (els.mic) {
+
+    const micSpan =
+      els.mic.querySelector("span");
+
+    if (micSpan) {
+      micSpan.textContent = t.mic;
+    }
+
+  }
+
+
+  if (els.status) {
+    els.status.textContent = t.ready;
+  }
+
 }
-els.language.addEventListener("change", e => setLanguage(e.target.value));
-setLanguage("ur");
 
-els.ask.addEventListener("click", async () => {
-  const question = els.question.value.trim();
-  const language = els.language.value;
-  if (!question) return;
 
-  els.ask.disabled = true;
-  els.answer.textContent = language === "ur" ? "AI جواب تیار کر رہا ہے…" : "Preparing your AI answer…";
-  els.speak.hidden = true;
+/* =========================
+   ERROR DISPLAY
+========================= */
 
-  try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/${FUNCTION_NAME}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_PUBLISHABLE_KEY
-      },
-      body: JSON.stringify({ question, language })
-    });
+function showError(message, language) {
 
-    const raw = await response.text();
+  if (!els.answer) {
+    return;
+  }
 
-let data;
 
-try {
-  data = JSON.parse(raw);
-} catch {
-  throw new Error(raw || `HTTP ${response.status}`);
+  const safeMessage =
+    String(message || "").trim();
+
+
+  els.answer.textContent =
+    `${text[language].error}
+
+${safeMessage || "Unknown error."}`;
+
+
+  if (els.speak) {
+    els.speak.hidden = true;
+  }
+
 }
 
-if (!response.ok) {
-  throw new Error(data.error || `HTTP ${response.status}`);
+
+/* =========================
+   LANGUAGE SELECTOR
+========================= */
+
+if (els.language) {
+
+  els.language.addEventListener(
+    "change",
+    function (event) {
+
+      setLanguage(event.target.value);
+
+    }
+  );
+
 }
 
-els.answer.textContent =
-  `${text[language].error}\n\n${err.message || err}`;
 
-els.answer.textContent = data.answer;
-els.speak.hidden = false;
-/* Voice input: uses the device/browser speech recognition where supported.
-   No private API key is exposed here. */
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+/* Initial language */
+
+setLanguage(
+  els.language
+    ? els.language.value
+    : "ur"
+);
+
+
+/* =========================
+   ASK AI
+========================= */
+
+if (els.ask) {
+
+  els.ask.addEventListener(
+    "click",
+    async function () {
+
+      const question =
+        els.question
+          ? els.question.value.trim()
+          : "";
+
+      const language =
+        els.language
+          ? els.language.value
+          : "ur";
+
+
+      /* Empty question */
+
+      if (!question) {
+
+        if (els.status) {
+
+          els.status.textContent =
+            language === "ur"
+              ? "براہِ کرم پہلے اپنا سوال لکھیں۔"
+              : "Please enter a question first.";
+
+        }
+
+        return;
+      }
+
+
+      /* Disable button while requesting */
+
+      els.ask.disabled = true;
+
+
+      /* Loading message */
+
+      if (els.answer) {
+
+        els.answer.textContent =
+          text[language].thinking;
+
+      }
+
+
+      if (els.speak) {
+        els.speak.hidden = true;
+      }
+
+
+      try {
+
+        /* Remove trailing slash */
+
+        const baseUrl =
+          SUPABASE_URL.replace(/\/+$/, "");
+
+
+        /* Supabase Edge Function URL */
+
+        const endpoint =
+          `${baseUrl}/functions/v1/${FUNCTION_NAME}`;
+
+
+        /* Send request */
+
+        const response =
+          await fetch(
+            endpoint,
+            {
+              method: "POST",
+
+              headers: {
+
+                "Content-Type":
+                  "application/json",
+
+                "apikey":
+                  SUPABASE_PUBLISHABLE_KEY,
+
+                "Authorization":
+                  `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+
+              },
+
+              body:
+                JSON.stringify({
+
+                  question:
+                    question,
+
+                  language:
+                    language
+
+                })
+
+            }
+          );
+
+
+        /*
+          Read response as TEXT first.
+
+          This is important because if Supabase
+          sends an error that is not JSON,
+          we can still see the real error.
+        */
+
+        const raw =
+          await response.text();
+
+
+        let data = null;
+
+
+        /*
+          Try to convert response to JSON
+        */
+
+        try {
+
+          data =
+            raw
+              ? JSON.parse(raw)
+              : null;
+
+        }
+
+        catch (jsonError) {
+
+          throw new Error(
+            `HTTP ${response.status}: ${
+              raw ||
+              "Empty response from server."
+            }`
+          );
+
+        }
+
+
+        /*
+          HTTP error
+        */
+
+        if (!response.ok) {
+
+          throw new Error(
+
+            data?.error ||
+
+            data?.message ||
+
+            `HTTP ${response.status}`
+
+          );
+
+        }
+
+
+        /*
+          Backend itself returned an error
+        */
+
+        if (data?.success === false) {
+
+          throw new Error(
+
+            data.error ||
+
+            data.message ||
+
+            "The AI function returned an error."
+
+          );
+
+        }
+
+
+        /*
+          No answer
+        */
+
+        if (!data?.answer) {
+
+          throw new Error(
+
+            `HTTP ${response.status}: ` +
+            `The AI function returned no answer.`
+
+          );
+
+        }
+
+
+        /*
+          SUCCESS
+        */
+
+        els.answer.textContent =
+          data.answer;
+
+
+        /*
+          Show speak button
+        */
+
+        if (els.speak) {
+          els.speak.hidden = false;
+        }
+
+
+        if (els.status) {
+          els.status.textContent =
+            text[language].ready;
+        }
+
+
+      }
+
+      catch (err) {
+
+        /*
+          Console debugging
+        */
+
+        console.error(
+          "Study AI error:",
+          err
+        );
+
+
+        /*
+          IMPORTANT:
+          Show the REAL error instead of
+          hiding it behind a generic message.
+        */
+
+        showError(
+
+          err && err.message
+            ? err.message
+            : "Unknown connection error.",
+
+          language
+
+        );
+
+      }
+
+
+      finally {
+
+        /*
+          Enable button again
+        */
+
+        els.ask.disabled = false;
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================
+   VOICE INPUT
+========================= */
+
+const SpeechRecognition =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
+
+
 let recognition = null;
 
-if (SpeechRecognition) {
-  recognition = new SpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = false;
 
-  els.mic.addEventListener("click", () => {
-    const lang = els.language.value;
-    recognition.lang = lang === "ur" ? "ur-PK" : "en-US";
-    els.status.textContent = text[lang].listening;
-    recognition.start();
-  });
+if (
+  SpeechRecognition &&
+  els.mic
+) {
 
-  recognition.onresult = event => {
-    els.question.value = event.results[0][0].transcript;
-    els.status.textContent = text[els.language.value].ready;
-  };
+  recognition =
+    new SpeechRecognition();
 
-  recognition.onerror = () => {
-    els.status.textContent = text[els.language.value].noSpeech;
-  };
-} else {
-  els.mic.disabled = true;
-  els.status.textContent = "Voice input is not supported by this browser.";
+
+  recognition.continuous =
+    false;
+
+
+  recognition.interimResults =
+    false;
+
+
+  /*
+    Microphone button
+  */
+
+  els.mic.addEventListener(
+    "click",
+    function () {
+
+      const lang =
+        els.language
+          ? els.language.value
+          : "ur";
+
+
+      /*
+        Urdu Pakistan
+        English United States
+      */
+
+      recognition.lang =
+        lang === "ur"
+          ? "ur-PK"
+          : "en-US";
+
+
+      if (els.status) {
+
+        els.status.textContent =
+          text[lang].listening;
+
+      }
+
+
+      try {
+
+        recognition.start();
+
+      }
+
+      catch (err) {
+
+        /*
+          Prevent browser error if
+          recognition is already running.
+        */
+
+        console.warn(
+          "Speech recognition:",
+          err
+        );
+
+      }
+
+    }
+  );
+
+
+  /*
+    Speech result
+  */
+
+  recognition.onresult =
+    function (event) {
+
+      const transcript =
+
+        event.results &&
+        event.results[0] &&
+        event.results[0][0]
+
+          ? event.results[0][0]
+              .transcript
+
+          : "";
+
+
+      if (els.question) {
+
+        els.question.value =
+          transcript;
+
+      }
+
+
+      const lang =
+        els.language
+          ? els.language.value
+          : "ur";
+
+
+      if (els.status) {
+
+        els.status.textContent =
+          text[lang].ready;
+
+      }
+
+    };
+
+
+  /*
+    Speech error
+  */
+
+  recognition.onerror =
+    function (event) {
+
+      const lang =
+        els.language
+          ? els.language.value
+          : "ur";
+
+
+      if (els.status) {
+
+        els.status.textContent =
+
+          `${text[lang].noSpeech} ` +
+          `(${event.error || "speech-error"})`;
+
+      }
+
+    };
+
+
+  /*
+    Speech ended
+  */
+
+  recognition.onend =
+    function () {
+
+      const lang =
+        els.language
+          ? els.language.value
+          : "ur";
+
+
+      if (
+        els.status &&
+        !els.status.textContent
+          .includes("error")
+      ) {
+
+        els.status.textContent =
+          text[lang].ready;
+
+      }
+
+    };
+
 }
 
-/* Voice output: device/browser speech synthesis. */
-els.speak.addEventListener("click", () => {
-  const lang = els.language.value;
-  const utterance = new SpeechSynthesisUtterance(els.answer.textContent);
-  utterance.lang = lang === "ur" ? "ur-PK" : "en-US";
-  els.status.textContent = text[lang].speaking;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utterance);
-});
+
+/*
+  Browser doesn't support voice
+*/
+
+else if (els.mic) {
+
+  els.mic.disabled = true;
+
+
+  const lang =
+    els.language
+      ? els.language.value
+      : "ur";
+
+
+  if (els.status) {
+
+    els.status.textContent =
+
+      lang === "ur"
+
+        ? "اس براؤزر میں وائس ان پٹ دستیاب نہیں ہے۔"
+
+        : "Voice input is not supported by this browser.";
+
+  }
+
+}
+
+
+/* =========================
+   TEXT TO SPEECH
+========================= */
+
+if (els.speak) {
+
+  els.speak.addEventListener(
+    "click",
+    function () {
+
+      /*
+        Browser doesn't support speech
+      */
+
+      if (
+        !("speechSynthesis" in window)
+      ) {
+
+        return;
+
+      }
+
+
+      if (!els.answer) {
+        return;
+      }
+
+
+      const lang =
+        els.language
+          ? els.language.value
+          : "ur";
+
+
+      const answer =
+        els.answer.textContent.trim();
+
+
+      if (!answer) {
+        return;
+      }
+
+
+      /*
+        Create speech
+      */
+
+      const utterance =
+        new SpeechSynthesisUtterance(
+          answer
+        );
+
+
+      utterance.lang =
+        lang === "ur"
+          ? "ur-PK"
+          : "en-US";
+
+
+      utterance.rate =
+        0.95;
+
+
+      if (els.status) {
+
+        els.status.textContent =
+          text[lang].speaking;
+
+      }
+
+
+      /*
+        Stop previous speech
+      */
+
+      speechSynthesis.cancel();
+
+
+      /*
+        Speak
+      */
+
+      speechSynthesis.speak(
+        utterance
+      );
+
+
+      /*
+        Speech finished
+      */
+
+      utterance.onend =
+        function () {
+
+          if (els.status) {
+
+            els.status.textContent =
+              text[lang].ready;
+
+          }
+
+        };
+
+    }
+  );
+
+}
