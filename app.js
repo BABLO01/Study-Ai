@@ -4,8 +4,8 @@
   The browser calls the Supabase Edge Function "ask-ai".
 */
 
-const SUPABASE_URL = "PASTE_YOUR_SUPABASE_PROJECT_URL_HERE";
-const SUPABASE_PUBLISHABLE_KEY = "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
+const SUPABASE_URL = "https://aoflthtjjmatlsybczuq.supabase.co/rest/v1/";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_2IPYcope6j2tNxTIEX6_Nw_8HnNVIh_";
 const FUNCTION_NAME = "ask-ai";
 
 const els = {
